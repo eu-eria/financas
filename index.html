@@ -25,51 +25,54 @@ import {
   BarChart
 } from 'lucide-react';
 
+// --- HELPERS DE LOCAL STORAGE SEGURO ---
+const safeGetStorage = (key, defaultValue) => {
+  try {
+    const item = window.localStorage.getItem(key);
+    return item ? JSON.parse(item) : defaultValue;
+  } catch (error) {
+    console.warn(`Erro ao ler ${key} do localStorage:`, error);
+    return defaultValue;
+  }
+};
+
+const safeSetStorage = (key, value) => {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.warn(`Erro ao salvar ${key} no localStorage:`, error);
+  }
+};
+
+const defaultCategories = [
+  { id: 1, name: 'Custos Fixos', percentage: 30, color: 'bg-blue-900/40 text-blue-400 border border-blue-900' },
+  { id: 2, name: 'Conforto', percentage: 15, color: 'bg-orange-900/40 text-orange-400 border border-orange-900' },
+  { id: 3, name: 'Metas', percentage: 15, color: 'bg-emerald-900/40 text-emerald-400 border border-emerald-900' },
+  { id: 4, name: 'Prazeres', percentage: 10, color: 'bg-pink-900/40 text-pink-400 border border-pink-900' },
+  { id: 5, name: 'Liberdade Financeira', percentage: 25, color: 'bg-purple-900/40 text-purple-400 border border-purple-900' },
+  { id: 6, name: 'Conhecimento', percentage: 5, color: 'bg-yellow-900/40 text-yellow-400 border border-yellow-900' },
+];
+
 export default function App() {
-  // --- INICIALIZAÇÃO DE ESTADOS COM LOCAL STORAGE ---
-  
-  const [categories, setCategories] = useState(() => {
-    const saved = localStorage.getItem('financas_categories');
-    if (saved) return JSON.parse(saved);
-    return [
-      { id: 1, name: 'Custos Fixos', percentage: 30, color: 'bg-blue-900/40 text-blue-400 border border-blue-900' },
-      { id: 2, name: 'Conforto', percentage: 15, color: 'bg-orange-900/40 text-orange-400 border border-orange-900' },
-      { id: 3, name: 'Metas', percentage: 15, color: 'bg-emerald-900/40 text-emerald-400 border border-emerald-900' },
-      { id: 4, name: 'Prazeres', percentage: 10, color: 'bg-pink-900/40 text-pink-400 border border-pink-900' },
-      { id: 5, name: 'Liberdade Financeira', percentage: 25, color: 'bg-purple-900/40 text-purple-400 border border-purple-900' },
-      { id: 6, name: 'Conhecimento', percentage: 5, color: 'bg-yellow-900/40 text-yellow-400 border border-yellow-900' },
-    ];
-  });
-
-  const [transactions, setTransactions] = useState(() => {
-    const saved = localStorage.getItem('financas_transactions');
-    if (saved) return JSON.parse(saved);
-    // Iniciando sem dados fictícios
-    return [];
-  });
-
-  const [userIncome, setUserIncome] = useState(() => {
-    const saved = localStorage.getItem('financas_userIncome');
-    if (saved) return JSON.parse(saved);
-    // Iniciando com renda zerada
-    return 0;
-  });
+  // --- INICIALIZAÇÃO DE ESTADOS COM LOCAL STORAGE SEGURO ---
+  const [categories, setCategories] = useState(() => safeGetStorage('financas_categories', defaultCategories));
+  const [transactions, setTransactions] = useState(() => safeGetStorage('financas_transactions', []));
+  const [userIncome, setUserIncome] = useState(() => safeGetStorage('financas_userIncome', 0));
 
   // Salvar no Local Storage sempre que houver alterações
   useEffect(() => {
-    localStorage.setItem('financas_categories', JSON.stringify(categories));
+    safeSetStorage('financas_categories', categories);
   }, [categories]);
 
   useEffect(() => {
-    localStorage.setItem('financas_transactions', JSON.stringify(transactions));
+    safeSetStorage('financas_transactions', transactions);
   }, [transactions]);
 
   useEffect(() => {
-    localStorage.setItem('financas_userIncome', JSON.stringify(userIncome));
+    safeSetStorage('financas_userIncome', userIncome);
   }, [userIncome]);
 
   // --- ESTADOS DA INTERFACE ---
-  
   const [activeTab, setActiveTab] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
@@ -104,7 +107,6 @@ export default function App() {
   ];
 
   // --- FUNÇÕES DE CÁLCULO GERAIS ---
-
   const totals = useMemo(() => {
     return transactions.reduce(
       (acc, transaction) => {
@@ -156,7 +158,6 @@ export default function App() {
     });
 
     return last6MonthsKeys.map(month => {
-      // Usar fuso horário seguro para o parse
       const date = new Date(month + '-01T12:00:00');
       return {
         month: date.toLocaleDateString('pt-BR', { month: 'short' }).toUpperCase().replace('.', ''),
